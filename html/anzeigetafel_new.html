@@ -1,113 +1,282 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <title>Silberhochzeit - Das große Quiz</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #F6F1EC; color: #333; line-height: 1.6; }
-    header { background: #c0c0c0; padding: 40px 20px; text-align: center; }
-    header img { max-width: 600px; width: 90%; height: auto; border-radius: 10px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-    section { max-width: 900px; margin: 20px auto; background: rgba(227, 216, 197, 0.9); padding: 25px; border-radius: 8px; }
-    
-    .nav-container { text-align: center; margin-bottom: 20px; }
-    #gameSelect { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; background: white; cursor: pointer; max-width: 90%; }
-    
-    h2 { color: #555; font-size: 1.4em; text-align: center; margin-bottom: 4px; min-height: 1.6em; padding: 0 10px; }
-    footer { text-align: center; padding: 20px; font-size: 0.9em; color: #777; }
-    
-    .reveal-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background: #555; color: #fff; border: none; border-radius: 5px; font-size: 1.1em; font-family: Arial, sans-serif; cursor: pointer; transition: background 0.2s; }
-    .reveal-btn:hover:not(:disabled) { background: #333; }
-    .reveal-btn:disabled { background: #888; cursor: default; }
-    
-    .progress-dots { display: flex; gap: 10px; margin-top: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
-    .pdot { width: 11px; height: 11px; border-radius: 50%; background: #ccc; transition: background 0.4s, transform 0.2s; flex-shrink: 0; }
-    .pdot.active { background: #555; transform: scale(1.3); }
-    .pdot.done { background: #999; }
-    
-    .board-wrapper { display: flex; flex-direction: column; align-items: center; overflow-x: auto; padding: 4px 0 12px; }
-    
-    :root { 
-      --cell-w: 36px; 
-      --cell-h: 54px; 
-      --cell-font: 34px; 
-      --gap: 3px; 
-      --row-sep: 8px; 
-    }
-    @media (max-width: 600px) { 
-      :root { --cell-w: 18px; --cell-h: 28px; --cell-font: 18px; --gap: 1.5px; --row-sep: 5px; } 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a1c;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .board { 
-        background: #1a1a1c; 
-        border-radius: 12px; 
-        padding: 0 18px 18px; 
-        box-shadow: 0 0 0 4px #a0a0a0, 0 0 0 7px #1a1a1c, 0 0 0 10px #d0d0d0, 0 14px 50px rgba(0,0,0,0.7); 
-        display: inline-flex; flex-direction: column; position: relative; 
+    /* ── Two-column layout ── */
+    .page-layout {
+      display: flex;
+      height: 100vh;
     }
-    
-    .screw { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #666, #2a2a2a); box-shadow: 0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1); }
-    .screw::after { content: ''; position: absolute; top: 50%; left: 20%; right: 20%; height: 2px; margin-top: -1px; background: rgba(0,0,0,0.5); border-radius: 1px; }
+
+    /* ── LEFT PANEL ── */
+    .left-panel {
+      width: 50%;
+      min-width: 300px;
+      background: #F6F1EC;
+      border-right: 3px solid #c0c0c0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 28px;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .lp-logo img {
+      width: 100%;
+      max-width: 280px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .lp-divider {
+      width: 100%;
+      height: 1px;
+      background: #d0c8b8;
+    }
+
+    .lp-title {
+      width: 100%;
+      text-align: center;
+    }
+
+    .lp-title h2 {
+      color: #555;
+      font-size: 1.25em;
+      line-height: 1.4;
+      min-height: 2.8em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lp-title p {
+      color: #888;
+      font-size: 0.9em;
+      margin-top: 6px;
+    }
+
+    #gameSelect {
+      width: 100%;
+      padding: 12px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 0.95em;
+      background: white;
+      cursor: pointer;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pdot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+      transition: background 0.4s, transform 0.2s;
+      flex-shrink: 0;
+    }
+    .pdot.active { background: #555; transform: scale(1.3); }
+    .pdot.done   { background: #999; }
+
+    .reveal-btn {
+      width: 100%;
+      padding: 16px;
+      background: #555;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1.15em;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .reveal-btn:hover:not(:disabled) { background: #333; }
+    .reveal-btn:disabled { background: #888; cursor: default; }
+
+    .lp-footer {
+      margin-top: auto;
+      font-size: 0.8em;
+      color: #aaa;
+      text-align: center;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .right-panel {
+      flex: 1;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 24px;
+    }
+
+    .board-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      transform-origin: center center;
+    }
+
+    /* ── Flip board ── */
+    :root {
+      --cell-w: 46px;
+      --cell-h: 68px;
+      --cell-font: 42px;
+      --gap: 3px;
+      --row-sep: 10px;
+    }
+
+    .board {
+      background: #1a1a1c;
+      border-radius: 14px;
+      padding: 0 20px 20px;
+      box-shadow: 0 0 0 4px #a0a0a0, 0 0 0 7px #1a1a1c, 0 0 0 10px #d0d0d0, 0 18px 60px rgba(0,0,0,0.8);
+      display: inline-flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .screw {
+      position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #666, #2a2a2a);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .screw::after {
+      content: ''; position: absolute; top: 50%; left: 20%; right: 20%;
+      height: 2px; margin-top: -1px; background: rgba(0,0,0,0.5); border-radius: 1px;
+    }
     .screw.tl { top: 10px; left: 10px; } .screw.tr { top: 10px; right: 10px; }
     .screw.bl { bottom: 10px; left: 10px; } .screw.br { bottom: 10px; right: 10px; }
-    
-    .board-strip { background: #111; margin: 0 -18px; padding: 8px 36px; border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; }
-    .strip-led { width: 8px; height: 8px; border-radius: 50%; background: #ff4500; box-shadow: 0 0 6px #ff4500, 0 0 12px rgba(255,69,0,0.4); flex-shrink: 0; }
-    .strip-label { color: #888; font-family: 'Courier New', monospace; font-size: 0.68em; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    
+
+    .board-strip {
+      background: #111; margin: 0 -20px; padding: 9px 40px;
+      border-radius: 14px 14px 0 0;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-bottom: 18px;
+    }
+    .strip-led {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #ff4500;
+      box-shadow: 0 0 6px #ff4500, 0 0 14px rgba(255,69,0,0.4);
+      flex-shrink: 0;
+    }
+    .strip-label {
+      color: #888; font-family: 'Courier New', monospace; font-size: 0.7em;
+      letter-spacing: 2px; text-transform: uppercase;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
     .board-row { display: flex; gap: var(--gap); margin-bottom: var(--gap); }
     .row-divider { height: var(--row-sep); display: flex; align-items: center; }
     .row-divider-line { height: 1px; background: #2c2c2c; flex: 1; }
-    
-    .cell { position: relative; width: var(--cell-w); height: var(--cell-h); flex-shrink: 0; perspective: 500px; }
+
+    .cell {
+      position: relative; width: var(--cell-w); height: var(--cell-h);
+      flex-shrink: 0; perspective: 600px;
+    }
     .c-top, .c-bot, .c-flap { position: absolute; width: 100%; overflow: hidden; }
-    .c-top { top: 0; height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; }
-    .c-bot { bottom: 0; height: 50%; background: linear-gradient(to bottom, #242424, #222222); border-radius: 0 0 3px 3px; }
-    .c-flap { top: 0; height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; transform-origin: center bottom; z-index: 3; will-change: transform; }
-    
+    .c-top  { top: 0;    height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; }
+    .c-bot  { bottom: 0; height: 50%; background: linear-gradient(to bottom, #242424, #222222); border-radius: 0 0 3px 3px; }
+    .c-flap { top: 0;    height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; transform-origin: center bottom; z-index: 3; will-change: transform; }
+
     .c-top span, .c-bot span, .c-flap span {
-      position: absolute; left: 50%; width: 100%; text-align: center; font-family: 'Courier New','Consolas',monospace;
-      font-size: var(--cell-font); font-weight: bold; color: #E8A200; text-shadow: 0 0 12px rgba(232,162,0,0.45);
+      position: absolute; left: 50%; width: 100%; text-align: center;
+      font-family: 'Courier New','Consolas',monospace;
+      font-size: var(--cell-font); font-weight: bold;
+      color: #E8A200; text-shadow: 0 0 14px rgba(232,162,0,0.45);
       white-space: nowrap; user-select: none; line-height: 1;
     }
-    .c-top span  { top: 100%;  transform: translate(-50%, -50%); }
-    .c-bot span  { top: 0%;    transform: translate(-50%, -50%); }
-    .c-flap span { top: 100%;  transform: translate(-50%, -50%); }
+    .c-top span  { top: 100%; transform: translate(-50%, -50%); }
+    .c-bot span  { top: 0%;   transform: translate(-50%, -50%); }
+    .c-flap span { top: 100%; transform: translate(-50%, -50%); }
 
-    .c-split { position: absolute; inset: calc(50% - 0.5px) 0 auto 0; height: 1px; background: rgba(0,0,0,0.35); z-index: 5; }
-    
+    .c-split {
+      position: absolute; inset: calc(50% - 0.5px) 0 auto 0;
+      height: 1px; background: rgba(0,0,0,0.35); z-index: 5;
+    }
+
     @keyframes flapFlip { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
     .c-flap.flipping { animation: flapFlip var(--dur, 110ms) ease-in forwards; }
+
+    /* ── Mobile: stack vertically ── */
+    @media (max-width: 800px) {
+      body { overflow: auto; }
+      .page-layout { flex-direction: column; height: auto; }
+      .left-panel {
+        width: 100%; min-width: unset;
+        border-right: none; border-bottom: 3px solid #c0c0c0;
+        padding: 20px;
+      }
+      .right-panel { padding: 20px; min-height: 50vh; }
+      :root { --cell-w: 20px; --cell-h: 30px; --cell-font: 20px; --gap: 2px; --row-sep: 6px; }
+    }
   </style>
 </head>
 <body>
-<header><img src="../assets/VIP.png" alt="Silberhochzeit"></header>
-<section>
-  <div class="nav-container">
-    <select id="gameSelect"></select>
-  </div>
-  
-  <h2 id="sectionTitle">Laden...</h2>
-  <p id="sectionSub" style="text-align:center;color:#666;margin-top:2px;margin-bottom:20px;">
-    Wer gehört zu dieser Gruppe?
-  </p>
-  
-  <div class="board-wrapper">
-    <div class="board" id="board">
-      <div class="screw tl"></div><div class="screw tr"></div>
-      <div class="screw bl"></div><div class="screw br"></div>
-      <div class="board-strip">
-        <div class="strip-led"></div>
-        <span class="strip-label" id="stripLabel">SILBERHOCHZEIT 2026</span>
-        <div class="strip-led"></div>
-      </div>
-      <div id="boardRows"></div>
+
+<div class="page-layout">
+
+  <!-- ── LEFT: Controls ── -->
+  <div class="left-panel">
+
+    <div class="lp-logo">
+      <img src="../assets/VIP.png" alt="Silberhochzeit">
     </div>
+
+    <div class="lp-divider"></div>
+
+    <div class="lp-title">
+      <h2 id="sectionTitle">Laden...</h2>
+      <p id="sectionSub">Wer gehört zu dieser Gruppe?</p>
+    </div>
+
+    <select id="gameSelect"></select>
+
     <div class="progress-dots" id="progressDots"></div>
+
     <button class="reveal-btn" id="revealBtn">Enthüllen</button>
+
+    <div class="lp-footer">&copy; 2026 &ndash; Claudia &amp; Tom</div>
+
   </div>
-</section>
-<footer>&copy; 2026 &ndash; Claudia &amp; Tom</footer>
+
+  <!-- ── RIGHT: Flip Board ── -->
+  <div class="right-panel">
+    <div class="board-wrapper">
+      <div class="board" id="board">
+        <div class="screw tl"></div><div class="screw tr"></div>
+        <div class="screw bl"></div><div class="screw br"></div>
+        <div class="board-strip">
+          <div class="strip-led"></div>
+          <span class="strip-label" id="stripLabel">SILBERHOCHZEIT 2026</span>
+          <div class="strip-led"></div>
+        </div>
+        <div id="boardRows"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <script>
 const GUESTS_CONFIRMED = [
@@ -191,7 +360,7 @@ class FlipBoard {
   load(rawRows) {
     this.running=false; this.timers.forEach(clearTimeout); this.timers.clear();
     this.rowsEl.innerHTML=''; this.cells=[];
-    const maxLen = Math.max(...rawRows.map(r=>r.length), 20); 
+    const maxLen = Math.max(...rawRows.map(r=>r.length), 20);
     this.rows = rawRows.map(r=>r.toUpperCase().padEnd(maxLen));
     this.rows.forEach((rowText, ri) => {
       if (ri > 0) {
@@ -243,10 +412,54 @@ class FlipBoard {
       runStep(steps,FLIP_MS*1.3,true);
     }));
   }
+  revealWith(rawRows, onDone) {
+    const padLen = this.rows.length > 0 ? this.rows[0].length : Math.max(...rawRows.map(r=>r.length), 20);
+    this.rows = rawRows.map(r => r.toUpperCase().padEnd(padLen));
+    this.reveal(onDone);
+  }
+  revealNames(fullRows, idRows, onDone) {
+    const padLen = this.rows.length > 0 ? this.rows[0].length : Math.max(...fullRows.map(r=>r.length), 20);
+    this.rows = fullRows.map(r => r.toUpperCase().padEnd(padLen));
+
+    let pending = 0;
+    this.cells.forEach((row, ri) => {
+      const idLen = idRows[ri] ? idRows[ri].length : 0;
+      row.forEach((_, ci) => { if (ci >= idLen) pending++; });
+    });
+    if (pending === 0) { if (onDone) onDone(); return; }
+
+    this.cells.forEach((row, ri) => {
+      const idLen = idRows[ri] ? idRows[ri].length : 0;
+      row.forEach((cell, ci) => {
+        if (ci < idLen) return;
+        const target = this.rows[ri][ci] || ' ';
+        const startDelay = ri * 480 + (ci - idLen) * 50;
+        const steps = 2 + Math.floor(Math.random() * 4);
+        const runStep = (left, dur, first) => {
+          const t = setTimeout(() => {
+            this.timers.delete(t);
+            const ch = left > 0 ? this._rnd() : target;
+            cell.flip(ch, dur).then(() => {
+              if (left > 0) { runStep(left-1, Math.min(dur*1.55, 380), false); }
+              else { pending--; if (pending <= 0 && onDone) onDone(); }
+            });
+          }, first ? startDelay : 0);
+          this.timers.add(t);
+        };
+        runStep(steps, FLIP_MS * 1.3, true);
+      });
+    });
+  }
 }
 
-let board, currentSet=0, busy=false;
+let board, currentSet=0, busy=false, revealPhase=0;
+let currentFullRows=[], currentIdRows=[];
 const $id=id=>document.getElementById(id);
+
+function parseIdOnly(row) {
+  const m = row.match(/^(ID:\d+)/);
+  return m ? m[1] : row;
+}
 
 function buildMenu() {
   const select = $id("gameSelect");
@@ -280,12 +493,11 @@ function setMeta(idx){
   $id("stripLabel").textContent = set.title.toUpperCase();
   $id("gameSelect").value = idx;
   updateDots(idx);
-  
-  if(idx === 7) { 
-    setBtn("🎲 Zufallssieger ziehen", true, doReveal);
+  if(idx === 7) {
+    setBtn("🎫 IDs anzeigen", true, doReveal);
     $id("sectionSub").textContent = "Wer ist heute der Glückspilz?";
   } else {
-    setBtn("🎉 Enthüllen", true, doReveal);
+    setBtn("🎫 IDs anzeigen", true, doReveal);
     $id("sectionSub").textContent = "Wer gehört zu dieser Gruppe?";
   }
 }
@@ -294,44 +506,67 @@ function setBtn(text,enabled,handler){
   const b=$id("revealBtn"); b.textContent=text; b.disabled=!enabled; b.onclick=enabled?handler:null;
 }
 
+function fitBoard() {
+  const panel   = document.querySelector('.right-panel');
+  const wrapper = document.querySelector('.board-wrapper');
+  const board   = document.getElementById('board');
+
+  wrapper.style.transform = 'scale(1)';
+  const availW = panel.clientWidth  - 48;
+  const availH = panel.clientHeight - 48;
+  const boardW = board.offsetWidth;
+  const boardH = board.offsetHeight;
+  if (!boardW || !boardH) return;
+  const scale = Math.min(availW / boardW, availH / boardH, 1);
+  wrapper.style.transform = `scale(${scale})`;
+}
+
 function loadSet(idx){
   if(busy) return;
   currentSet=idx;
-  
-  let displayRows = [];
-
-  if(idx === 7) { 
+  revealPhase=0;
+  if(idx === 7) {
     const pool = GUESTS_CONFIRMED.filter(g => g.id !== 72 && g.id !== 73);
     const winner = pool[Math.floor(Math.random() * pool.length)];
     const idStr = String(winner.id).padStart(3, '0');
-    displayRows = ["ID:" + idStr + " " + winner.name];
+    currentFullRows = ["ID:" + idStr + " " + winner.name];
   } else {
-    // FIX: Wir nehmen die Zeilen jetzt 1:1 wie sie in PROGRAM_SETS stehen!
-    displayRows = [...PROGRAM_SETS[idx].rows];
+    currentFullRows = [...PROGRAM_SETS[idx].rows];
   }
-
+  currentIdRows = currentFullRows.map(parseIdOnly);
   setMeta(idx);
-  board.load(displayRows);
+  board.load(currentFullRows);
+  requestAnimationFrame(fitBoard);
 }
 
 function doReveal(){
-  if(busy)return; busy=true;
-  setBtn("⏳ Läuft...",false,null);
+  if(busy) return; busy=true;
+  setBtn("⏳ Läuft...", false, null);
   $id("gameSelect").disabled = true;
-  
-  board.reveal(()=>{
-    busy=false;
-    $id("gameSelect").disabled = false;
-    const isLast = currentSet >= PROGRAM_SETS.length - 1;
-    if(isLast){
-      setBtn("🔄 Nochmal auslosen", true, () => {
+
+  if(revealPhase === 0) {
+    board.revealWith(currentIdRows, () => {
+      revealPhase=1;
+      busy=false;
+      $id("gameSelect").disabled = false;
+      setBtn("🎉 Namen enthüllen", true, doReveal);
+    });
+  } else {
+    board.revealNames(currentFullRows, currentIdRows, () => {
+      revealPhase=2;
+      busy=false;
+      $id("gameSelect").disabled = false;
+      const isLast = currentSet >= PROGRAM_SETS.length - 1;
+      if(isLast){
+        setBtn("🔄 Nochmal auslosen", true, () => {
           board.load(["BERECHNE NEUEN SIEGER..."]);
           setTimeout(() => loadSet(7), 800);
-      });
-    } else {
-      setBtn("▶ Nächste Ziehung", true, () => loadSet(currentSet + 1));
-    }
-  });
+        });
+      } else {
+        setBtn("▶ Nächste Ziehung", true, () => loadSet(currentSet + 1));
+      }
+    });
+  }
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
@@ -339,6 +574,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   buildMenu();
   buildDots();
   loadSet(0);
+  window.addEventListener('resize', fitBoard);
 });
 </script>
 </body>
