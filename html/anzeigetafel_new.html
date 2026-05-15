@@ -1,0 +1,345 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Silberhochzeit - Das große Quiz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #F6F1EC; color: #333; line-height: 1.6; }
+    header { background: #c0c0c0; padding: 40px 20px; text-align: center; }
+    header img { max-width: 600px; width: 90%; height: auto; border-radius: 10px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    section { max-width: 900px; margin: 20px auto; background: rgba(227, 216, 197, 0.9); padding: 25px; border-radius: 8px; }
+    
+    .nav-container { text-align: center; margin-bottom: 20px; }
+    #gameSelect { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 1em; background: white; cursor: pointer; max-width: 90%; }
+    
+    h2 { color: #555; font-size: 1.4em; text-align: center; margin-bottom: 4px; min-height: 1.6em; padding: 0 10px; }
+    footer { text-align: center; padding: 20px; font-size: 0.9em; color: #777; }
+    
+    .reveal-btn { display: inline-block; margin-top: 20px; padding: 15px 30px; background: #555; color: #fff; border: none; border-radius: 5px; font-size: 1.1em; font-family: Arial, sans-serif; cursor: pointer; transition: background 0.2s; }
+    .reveal-btn:hover:not(:disabled) { background: #333; }
+    .reveal-btn:disabled { background: #888; cursor: default; }
+    
+    .progress-dots { display: flex; gap: 10px; margin-top: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .pdot { width: 11px; height: 11px; border-radius: 50%; background: #ccc; transition: background 0.4s, transform 0.2s; flex-shrink: 0; }
+    .pdot.active { background: #555; transform: scale(1.3); }
+    .pdot.done { background: #999; }
+    
+    .board-wrapper { display: flex; flex-direction: column; align-items: center; overflow-x: auto; padding: 4px 0 12px; }
+    
+    :root { 
+      --cell-w: 36px; 
+      --cell-h: 54px; 
+      --cell-font: 34px; 
+      --gap: 3px; 
+      --row-sep: 8px; 
+    }
+    @media (max-width: 600px) { 
+      :root { --cell-w: 18px; --cell-h: 28px; --cell-font: 18px; --gap: 1.5px; --row-sep: 5px; } 
+    }
+
+    .board { 
+        background: #1a1a1c; 
+        border-radius: 12px; 
+        padding: 0 18px 18px; 
+        box-shadow: 0 0 0 4px #a0a0a0, 0 0 0 7px #1a1a1c, 0 0 0 10px #d0d0d0, 0 14px 50px rgba(0,0,0,0.7); 
+        display: inline-flex; flex-direction: column; position: relative; 
+    }
+    
+    .screw { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #666, #2a2a2a); box-shadow: 0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1); }
+    .screw::after { content: ''; position: absolute; top: 50%; left: 20%; right: 20%; height: 2px; margin-top: -1px; background: rgba(0,0,0,0.5); border-radius: 1px; }
+    .screw.tl { top: 10px; left: 10px; } .screw.tr { top: 10px; right: 10px; }
+    .screw.bl { bottom: 10px; left: 10px; } .screw.br { bottom: 10px; right: 10px; }
+    
+    .board-strip { background: #111; margin: 0 -18px; padding: 8px 36px; border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; }
+    .strip-led { width: 8px; height: 8px; border-radius: 50%; background: #ff4500; box-shadow: 0 0 6px #ff4500, 0 0 12px rgba(255,69,0,0.4); flex-shrink: 0; }
+    .strip-label { color: #888; font-family: 'Courier New', monospace; font-size: 0.68em; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .board-row { display: flex; gap: var(--gap); margin-bottom: var(--gap); }
+    .row-divider { height: var(--row-sep); display: flex; align-items: center; }
+    .row-divider-line { height: 1px; background: #2c2c2c; flex: 1; }
+    
+    .cell { position: relative; width: var(--cell-w); height: var(--cell-h); flex-shrink: 0; perspective: 500px; }
+    .c-top, .c-bot, .c-flap { position: absolute; width: 100%; overflow: hidden; }
+    .c-top { top: 0; height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; }
+    .c-bot { bottom: 0; height: 50%; background: linear-gradient(to bottom, #242424, #222222); border-radius: 0 0 3px 3px; }
+    .c-flap { top: 0; height: 50%; background: linear-gradient(to bottom, #323232, #2a2a2a); border-radius: 3px 3px 0 0; transform-origin: center bottom; z-index: 3; will-change: transform; }
+    
+    .c-top span, .c-bot span, .c-flap span {
+      position: absolute; left: 50%; width: 100%; text-align: center; font-family: 'Courier New','Consolas',monospace;
+      font-size: var(--cell-font); font-weight: bold; color: #E8A200; text-shadow: 0 0 12px rgba(232,162,0,0.45);
+      white-space: nowrap; user-select: none; line-height: 1;
+    }
+    .c-top span  { top: 100%;  transform: translate(-50%, -50%); }
+    .c-bot span  { top: 0%;    transform: translate(-50%, -50%); }
+    .c-flap span { top: 100%;  transform: translate(-50%, -50%); }
+
+    .c-split { position: absolute; inset: calc(50% - 0.5px) 0 auto 0; height: 1px; background: rgba(0,0,0,0.35); z-index: 5; }
+    
+    @keyframes flapFlip { 0% { transform: rotateX(0deg); } 100% { transform: rotateX(-90deg); } }
+    .c-flap.flipping { animation: flapFlip var(--dur, 110ms) ease-in forwards; }
+  </style>
+</head>
+<body>
+<header><img src="../assets/VIP.png" alt="Silberhochzeit"></header>
+<section>
+  <div class="nav-container">
+    <select id="gameSelect"></select>
+  </div>
+  
+  <h2 id="sectionTitle">Laden...</h2>
+  <p id="sectionSub" style="text-align:center;color:#666;margin-top:2px;margin-bottom:20px;">
+    Wer gehört zu dieser Gruppe?
+  </p>
+  
+  <div class="board-wrapper">
+    <div class="board" id="board">
+      <div class="screw tl"></div><div class="screw tr"></div>
+      <div class="screw bl"></div><div class="screw br"></div>
+      <div class="board-strip">
+        <div class="strip-led"></div>
+        <span class="strip-label" id="stripLabel">SILBERHOCHZEIT 2026</span>
+        <div class="strip-led"></div>
+      </div>
+      <div id="boardRows"></div>
+    </div>
+    <div class="progress-dots" id="progressDots"></div>
+    <button class="reveal-btn" id="revealBtn">Enthüllen</button>
+  </div>
+</section>
+<footer>&copy; 2026 &ndash; Claudia &amp; Tom</footer>
+
+<script>
+const GUESTS_CONFIRMED = [
+  {id: 105, name: "JOHANNES"}, {id: 106, name: "PAUL"}, {id: 107, name: "ANNA"}, {id: 108, name: "CAROLIN"},
+  {id: 109, name: "VIKTOR"}, {id: 112, name: "SONJA"},
+  {id: 113, name: "MALTE"}, {id: 118, name: "ONKEL WOLFGANG"}, {id: 119, name: "TANTE KATI"}, {id: 120, name: "MARTIN"},
+  {id: 121, name: "SORAH"},  {id: 124, name: "TANTE STEFF"},
+  {id: 127, name: "OMA ENGL"}, {id: 128, name: "OPA ENGL"},
+  {id: 131, name: "JOSEF"}, {id: 132, name: "ELISABETH"}, {id: 137, name: "STEFFI"}, {id: 138, name: "RALF"},
+  {id: 139, name: "FENJA"}, {id: 140, name: "LIAM"},
+  {id: 147, name: "SUSANN"},
+  {id: 150, name: "MORITZ"}, {id: 151, name: "REBECCA"}, {id: 152, name: "MAXI"},
+  {id: 153, name: "MIRA"}, {id: 154, name: "MARKO (PFARRER)"}, {id: 1, name: "MATZE"}, {id: 2, name: "CLAUDIA DO."},
+  {id: 3, name: "JENS"}, {id: 4, name: "JANA"}, {id: 5, name: "RICO"}, {id: 6, name: "IVONNE"}, {id: 7, name: "KARSTEN"},
+  {id: 8, name: "SYLVIA"}, {id: 9, name: "ANDREAS"}, {id: 10, name: "NICOLE"}, {id: 11, name: "MARKO S."},
+  {id: 12, name: "ANDREA"}, {id: 15, name: "CLAUDIA L."}, {id: 16, name: "MARTIN K."}, {id: 17, name: "ALEX L."},
+  {id: 19, name: "ANGELA"}, {id: 20, name: "MARLEEN"}, {id: 21, name: "MICHAELA"},
+  {id: 22, name: "SANDRA"}, {id: 23, name: "KATHRIN"}, {id: 24, name: "HANNA"}, {id: 25, name: "SILVIA"},
+  {id: 29, name: "KATI"}, {id: 30, name: "SUSI"}, {id: 31, name: "PETER"}, {id: 32, name: "PETRA F."}, {id: 33, name: "SONNE"},
+  {id: 34, name: "GUIDO"}, {id: 35, name: "BINE"}, {id: 42, name: "JOSI"}, {id: 43, name: "WIEPE"}, {id: 44, name: "HENNE"},
+  {id: 45, name: "MISCHA"}, {id: 47, name: "MIKE"}, {id: 48, name: "KRESCHE"}, {id: 50, name: "FUFFI"}, {id: 52, name: "TETA"},
+  {id: 53, name: "JEROME"}, {id: 54, name: "SCHWAGA"}, {id: 55, name: "ZOBEL"}, {id: 56, name: "NOBSCHA"},
+  {id: 58, name: "HUS"}, {id: 59, name: "KATZI"}, {id: 60, name: "KASSE"}, {id: 61, name: "SCHWERT"},
+  {id: 62, name: "GRUFT"}, {id: 64, name: "ROMAN"}, {id: 65, name: "METI"}, {id: 66, name: "BAXE"}, {id: 67, name: "CHRISTIANE"}
+];
+
+const PROGRAM_SETS = [
+  { title: "Ziehung 1: Was habt ihr gemeinsam", rows: ["ID:119 TANTE KATI", "ID:033 SONNE"] },
+  { title: "Ziehung 2: Schnapsrunde", rows: ["ID:111 SUSANN", "ID:127 OMA ENGL", "ID:025 SILVIA"] },
+  { title: "Ziehung 3: Was habt ihr gemeinsam", rows: ["ID:101 OMA PETRA", "ID:102 OPA GERHARD", "ID:010 NICOLE", "ID:023 KATHRIN", "ID:035 BINE", "ID:047 MIKE"] },
+  { title: "Ziehung 4: Was habt ihr gemeinsam", rows: ["ID:106 PAUL", "ID:112 SONJA", "ID:131 JOSEF", "ID:132 ELISABETH", "ID:032 PETRA"] },
+  { title: "Ziehung 5: Was habt ihr gemeinsam", rows: ["ID:113 MALTE", "ID:050 FUFFI"] },
+  { title: "Ziehung 6: Trinkspruch dichten", rows: ["ID:110 TONIO", "ID:028 NETTL", "ID:036 BIANCA", "ID:058 HUS"] },
+  { title: "Ziehung 7: Schnapsrunde", rows: ["ID:138 RALF", "ID:003 JENS", "ID:008 SYLVIA", "ID:011 MARKO S.", "ID:065 METI"] },
+  { title: "Ziehung 8: Großer Zufallssieger", rows: ["WIRD BERECHNET..."] }
+];
+
+const CHARSET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:&+-!?";
+const CYCLE_MS = 75, FLIP_MS = 110;
+
+class FlipCell {
+  constructor(parent) {
+    this.char = ' '; this.busy = false;
+    this.el=document.createElement('div'); this.el.className='cell';
+    this.elTop=document.createElement('div'); this.elTop.className='c-top';
+    this.elBot=document.createElement('div'); this.elBot.className='c-bot';
+    this.elFlap=document.createElement('div'); this.elFlap.className='c-flap';
+    this.split=document.createElement('div'); this.split.className='c-split';
+    this.sTop=document.createElement('span'); this.sBot=document.createElement('span'); this.sFlap=document.createElement('span');
+    this.elTop.appendChild(this.sTop); this.elBot.appendChild(this.sBot); this.elFlap.appendChild(this.sFlap);
+    this.el.appendChild(this.elTop); this.el.appendChild(this.elBot); this.el.appendChild(this.elFlap); this.el.appendChild(this.split);
+    parent.appendChild(this.el); this._paint(' ');
+  }
+  _paint(ch) { this.char=ch; this.sTop.textContent=ch; this.sBot.textContent=ch; this.sFlap.textContent=ch; }
+  flip(newChar, dur) {
+    dur = dur || FLIP_MS;
+    return new Promise(resolve => {
+      if (this.busy) {
+        setTimeout(() => this.flip(newChar, dur).then(resolve), FLIP_MS + 20);
+        return;
+      }
+      this.busy = true;
+      const old = this.char;
+      this.sFlap.textContent = old;
+      this.sTop.textContent  = newChar;
+      this.elFlap.style.setProperty('--dur', dur + 'ms');
+      this.elFlap.classList.remove('flipping');
+      void this.elFlap.offsetWidth;
+      this.elFlap.classList.add('flipping');
+      setTimeout(() => {
+        this.elFlap.classList.remove('flipping');
+        this.sBot.textContent=newChar; this.sFlap.textContent=newChar;
+        this.char=newChar; this.busy=false; resolve();
+      }, dur + 15);
+    });
+  }
+}
+
+class FlipBoard {
+  constructor(rowsEl) { this.rowsEl=rowsEl; this.rows=[]; this.cells=[]; this.running=false; this.timers=new Set(); }
+  load(rawRows) {
+    this.running=false; this.timers.forEach(clearTimeout); this.timers.clear();
+    this.rowsEl.innerHTML=''; this.cells=[];
+    const maxLen = Math.max(...rawRows.map(r=>r.length), 20); 
+    this.rows = rawRows.map(r=>r.toUpperCase().padEnd(maxLen));
+    this.rows.forEach((rowText, ri) => {
+      if (ri > 0) {
+        const sep=document.createElement('div'); sep.className='row-divider';
+        const line=document.createElement('div'); line.className='row-divider-line';
+        sep.appendChild(line); this.rowsEl.appendChild(sep);
+      }
+      const rowEl=document.createElement('div'); rowEl.className='board-row';
+      const cellRow=[];
+      for (let ci=0; ci<rowText.length; ci++) cellRow.push(new FlipCell(rowEl));
+      this.cells.push(cellRow); this.rowsEl.appendChild(rowEl);
+    });
+    this.running=true; this._startCycle();
+  }
+  _rnd() { return CHARSET[Math.floor(Math.random()*CHARSET.length)]; }
+  _startCycle() {
+    this.cells.forEach(row => row.forEach(cell => {
+      const loop = () => {
+        if (!this.running) return;
+        const t = setTimeout(() => {
+          this.timers.delete(t);
+          if (!this.running) return;
+          cell.flip(this._rnd(), 90+Math.random()*30).then(loop);
+        }, CYCLE_MS+Math.random()*CYCLE_MS);
+        this.timers.add(t);
+      };
+      const init = setTimeout(() => { this.timers.delete(init); loop(); }, Math.random()*400);
+      this.timers.add(init);
+    }));
+  }
+  reveal(onDone) {
+    this.running=false; this.timers.forEach(clearTimeout); this.timers.clear();
+    let pending=this.cells.reduce((s,r)=>s+r.length,0);
+    this.cells.forEach((row, ri) => row.forEach((cell, ci) => {
+      const target=this.rows[ri][ci]||' ';
+      const startDelay=ri*480+ci*50;
+      const steps=2+Math.floor(Math.random()*4);
+      const runStep=(left,dur,first)=>{
+        const t=setTimeout(()=>{
+          this.timers.delete(t);
+          const ch=left>0?this._rnd():target;
+          cell.flip(ch,dur).then(()=>{
+            if(left>0){runStep(left-1,Math.min(dur*1.55,380),false);}
+            else{pending--;if(pending<=0&&onDone)onDone();}
+          });
+        }, first?startDelay:0);
+        this.timers.add(t);
+      };
+      runStep(steps,FLIP_MS*1.3,true);
+    }));
+  }
+}
+
+let board, currentSet=0, busy=false;
+const $id=id=>document.getElementById(id);
+
+function buildMenu() {
+  const select = $id("gameSelect");
+  PROGRAM_SETS.forEach((set, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = set.title;
+    select.appendChild(opt);
+  });
+  select.onchange = (e) => loadSet(parseInt(e.target.value));
+}
+
+function buildDots(){
+  const el=$id("progressDots"); el.innerHTML="";
+  PROGRAM_SETS.forEach((_,i)=>{
+    const d=document.createElement("div"); d.className="pdot"; d.id="dot"+i; el.appendChild(d);
+  });
+}
+
+function updateDots(idx){
+  PROGRAM_SETS.forEach((_,i)=>{
+    const d=$id("dot"+i); d.classList.remove("active","done");
+    if(i<idx) d.classList.add("done");
+    if(i===idx) d.classList.add("active");
+  });
+}
+
+function setMeta(idx){
+  const set=PROGRAM_SETS[idx];
+  $id("sectionTitle").textContent = set.title;
+  $id("stripLabel").textContent = set.title.toUpperCase();
+  $id("gameSelect").value = idx;
+  updateDots(idx);
+  
+  if(idx === 7) { 
+    setBtn("🎲 Zufallssieger ziehen", true, doReveal);
+    $id("sectionSub").textContent = "Wer ist heute der Glückspilz?";
+  } else {
+    setBtn("🎉 Enthüllen", true, doReveal);
+    $id("sectionSub").textContent = "Wer gehört zu dieser Gruppe?";
+  }
+}
+
+function setBtn(text,enabled,handler){
+  const b=$id("revealBtn"); b.textContent=text; b.disabled=!enabled; b.onclick=enabled?handler:null;
+}
+
+function loadSet(idx){
+  if(busy) return;
+  currentSet=idx;
+  
+  let displayRows = [];
+
+  if(idx === 7) { 
+    const pool = GUESTS_CONFIRMED.filter(g => g.id !== 72 && g.id !== 73);
+    const winner = pool[Math.floor(Math.random() * pool.length)];
+    const idStr = String(winner.id).padStart(3, '0');
+    displayRows = ["ID:" + idStr + " " + winner.name];
+  } else {
+    // FIX: Wir nehmen die Zeilen jetzt 1:1 wie sie in PROGRAM_SETS stehen!
+    displayRows = [...PROGRAM_SETS[idx].rows];
+  }
+
+  setMeta(idx);
+  board.load(displayRows);
+}
+
+function doReveal(){
+  if(busy)return; busy=true;
+  setBtn("⏳ Läuft...",false,null);
+  $id("gameSelect").disabled = true;
+  
+  board.reveal(()=>{
+    busy=false;
+    $id("gameSelect").disabled = false;
+    const isLast = currentSet >= PROGRAM_SETS.length - 1;
+    if(isLast){
+      setBtn("🔄 Nochmal auslosen", true, () => {
+          board.load(["BERECHNE NEUEN SIEGER..."]);
+          setTimeout(() => loadSet(7), 800);
+      });
+    } else {
+      setBtn("▶ Nächste Ziehung", true, () => loadSet(currentSet + 1));
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  board = new FlipBoard($id("boardRows"));
+  buildMenu();
+  buildDots();
+  loadSet(0);
+});
+</script>
+</body>
+</html>

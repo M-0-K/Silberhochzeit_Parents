@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="UTF-8">
+  <title>Getränkekarte – Silberhochzeit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #F6F1EC;
+      color: #333;
+      line-height: 1.6;
+    }
+    header {
+      background: #c0c0c0;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    header img {
+      max-width: 600px;
+      width: 90%;
+      height: auto;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    section {
+      max-width: 900px;
+      margin: 20px auto;
+      background: rgba(227, 216, 197, 0.9);
+      padding: 25px;
+      border-radius: 8px;
+    }
+    h2 {
+      color: #555;
+      font-size: 1.5em;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #pdf-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    #pdf-container canvas {
+      max-width: 100%;
+      border-radius: 6px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      background: #fff;
+    }
+    #pdf-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    #pdf-controls button {
+      padding: 10px 22px;
+      background: #555;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #pdf-controls button:hover {
+      background: #333;
+    }
+    #pdf-controls button:disabled {
+      background: #aaa;
+      cursor: default;
+    }
+    #page-info {
+      font-size: 0.95em;
+      color: #555;
+    }
+    #pdf-loading {
+      text-align: center;
+      padding: 40px;
+      color: #777;
+    }
+    .button {
+      display: block;
+      text-align: center;
+      margin: 20px auto 0;
+      padding: 14px 30px;
+      background: #555;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 1em;
+      max-width: 260px;
+    }
+    .button:hover {
+      background: #333;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin: 10px auto 0;
+      color: #777;
+      font-size: 0.95em;
+      text-decoration: none;
+    }
+    .back-link:hover {
+      color: #333;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9em;
+      color: #777;
+    }
+    @media (max-width: 600px) {
+      header { padding: 30px 15px; }
+      section { margin: 15px 10px; padding: 20px; }
+      h2 { font-size: 1.3em; }
+      .button { max-width: 100%; box-sizing: border-box; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="../assets/VIP.png" alt="Silberhochzeit">
+</header>
+
+<section>
+  <h2>🍹 Getränkekarte</h2>
+  <div id="pdf-loading">Karte wird geladen…</div>
+  <div id="pdf-container"></div>
+  <div id="pdf-controls" style="display:none;">
+    <button id="btn-prev" disabled>&#8592; Zurück</button>
+    <span id="page-info"></span>
+    <button id="btn-next">Weiter &#8594;</button>
+  </div>
+  <a class="button" href="../assets/Getr%C3%A4nkekarte.pdf" target="_blank" download>PDF herunterladen</a>
+</section>
+
+<a class="back-link" href="Silberhochzeit_new.html">← Zurück zur Übersicht</a>
+
+<footer>
+  © 2026 – Claudia &amp; Tom
+</footer>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const url = '../assets/Getränkekarte.pdf';
+  const container = document.getElementById('pdf-container');
+  const loading = document.getElementById('pdf-loading');
+  const controls = document.getElementById('pdf-controls');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const pageInfo = document.getElementById('page-info');
+
+  let pdfDoc = null;
+  let currentPage = 1;
+
+  function renderPage(num) {
+    pdfDoc.getPage(num).then(page => {
+      const viewport = page.getViewport({ scale: Math.min(2, (container.clientWidth || 800) / page.getViewport({ scale: 1 }).width) });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+
+      container.innerHTML = '';
+      container.appendChild(canvas);
+
+      page.render({ canvasContext: ctx, viewport }).promise.then(() => {
+        pageInfo.textContent = `Seite ${num} von ${pdfDoc.numPages}`;
+        btnPrev.disabled = num <= 1;
+        btnNext.disabled = num >= pdfDoc.numPages;
+        if (pdfDoc.numPages > 1) controls.style.display = 'flex';
+      });
+    });
+  }
+
+  pdfjsLib.getDocument(url).promise.then(pdf => {
+    pdfDoc = pdf;
+    loading.style.display = 'none';
+    renderPage(currentPage);
+  }).catch(() => {
+    loading.textContent = 'PDF konnte nicht geladen werden.';
+  });
+
+  btnPrev.addEventListener('click', () => { if (currentPage > 1) renderPage(--currentPage); });
+  btnNext.addEventListener('click', () => { if (currentPage < pdfDoc.numPages) renderPage(++currentPage); });
+</script>
+
+</body>
+</html>
