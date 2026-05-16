@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Silberhochzeit 2026</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #000;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    canvas { position: fixed; inset: 0; pointer-events: none; }
+
+    /* subtle radial glow behind the ticket */
+    .glow-bg {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 55% at 50% 50%,
+        rgba(200,170,80,0.08) 0%,
+        rgba(192,192,192,0.04) 80%,
+        transparent 70%);
+      pointer-events: none;
+    }
+
+    .stage {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 36px;
+    }
+
+    /* ── Ticket ── */
+    .ticket-wrap {
+      position: relative;
+      animation: float 5s ease-in-out infinite;
+    }
+    .ticket-wrap img {
+      width: min(1100px, 95vw);
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      filter:
+        drop-shadow(0 0 30px rgba(232,162,0,0.25))
+        drop-shadow(0 0 80px rgba(192,192,192,0.2));
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px)   rotate(-0.8deg); }
+      50%       { transform: translateY(-20px) rotate( 0.8deg); }
+    }
+    @keyframes glow-pulse {
+      0%, 100% {
+        filter:
+          drop-shadow(0 0 25px rgba(232,162,0,0.20))
+          drop-shadow(0 0 70px rgba(192,192,192,0.15));
+      }
+      50% {
+        filter:
+          drop-shadow(0 0 50px rgba(232,162,0,0.45))
+          drop-shadow(0 0 120px rgba(232,162,0,0.18))
+          drop-shadow(0 0 200px rgba(192,192,192,0.10));
+      }
+    }
+
+    /* ── Hint ── */
+    .hint {
+      color: rgba(255,255,255,0.3);
+      font-family: Arial, sans-serif;
+      font-size: clamp(0.8em, 1.8vw, 1em);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      animation: blink 2.8s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 0.2; }
+      50%       { opacity: 0.7; }
+    }
+
+    /* ── Top title ── */
+    .title {
+      position: fixed; top: 26px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(192,192,192,0.5);
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.65em, 1.3vw, 0.9em);
+      letter-spacing: 7px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── Back button ── */
+    #back-btn {
+      position: fixed; top: 20px; right: 24px;
+      color: rgba(255,255,255,0.3);
+      font-family: Arial, sans-serif;
+      font-size: 0.85em;
+      letter-spacing: 1px;
+      text-decoration: none;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    #back-btn:hover { color: rgba(255,255,255,0.85); }
+
+    #switch-btn {
+      position: fixed; bottom: 20px; left: 24px;
+      color: rgba(255,255,255,0.3);
+      font-family: Arial, sans-serif;
+      font-size: 0.85em;
+      letter-spacing: 1px;
+      text-decoration: none;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    #switch-btn:hover { color: rgba(255,255,255,0.85); }
+
+    /* ── Footer ── */
+    .year {
+      position: fixed; bottom: 22px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(192,192,192,0.2);
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.6em, 1vw, 0.8em);
+      letter-spacing: 4px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<p class="title">Silberhochzeit &nbsp;·&nbsp; Claudia &amp; Tom</p>
+<a href="anzeigetafel_new.html" id="back-btn">&#8592; Zurück zum Spiel</a>
+<a href="screensaver.html" id="switch-btn">&#8592; Screensaver 1</a>
+<p class="year">&copy; 2026</p>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+const COLORS = [
+  // Reds & Pinks
+  '#ff3b3b', '#ff6b8a', '#ff1493', '#ff69b4',
+  // Oranges
+  '#ff8c00', '#ffa500', '#ff6600',
+  // Yellows
+  '#ffe600', '#fff44f', '#ffd700',
+  // Greens
+  '#00e676', '#39ff14', '#00fa9a', '#7fff00',
+  // Blues & Cyans
+  '#00cfff', '#00bfff', '#1e90ff', '#00e5ff',
+  // Purples & Violets
+  '#bf00ff', '#9400d3', '#da70d6', '#ff00ff',
+  // Whites & silvers (sprinkled in)
+  '#ffffff', '#e0e0e0',
+];
+
+let W, H, pieces = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Three types: rect, circle, star
+function spawn(randomY = false) {
+  const type  = Math.random() < 0.6 ? 'rect' : Math.random() < 0.6 ? 'circle' : 'star';
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+  return {
+    type,
+    x:     Math.random() * W,
+    y:     randomY ? Math.random() * H : -20 - Math.random() * 60,
+    r:     2 + Math.random() * 5,          // radius / half-size
+    w:     5 + Math.random() * 9,
+    h:     8 + Math.random() * 10,
+    angle: Math.random() * Math.PI * 2,
+    spin:  (Math.random() - 0.5) * 0.10,
+    vx:    (Math.random() - 0.5) * 1.4,
+    vy:    1.2 + Math.random() * 2.8,
+    alpha: 0.55 + Math.random() * 0.45,
+    color,
+    glowColor: color,
+    glow:  Math.random() < 0.18,           // ~18% get a glow
+    wobble: Math.random() * Math.PI * 2,
+    wobbleSpeed: 0.02 + Math.random() * 0.03,
+  };
+}
+
+function drawStar(ctx, r, spikes) {
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    const radius = i % 2 === 0 ? r : r * 0.45;
+    ctx.lineTo(Math.cos(i * step - Math.PI / 2) * radius,
+               Math.sin(i * step - Math.PI / 2) * radius);
+  }
+  ctx.closePath();
+}
+
+// Seed initial particles spread across screen
+for (let i = 0; i < 140; i++) pieces.push(spawn(true));
+
+function tick() {
+  ctx.clearRect(0, 0, W, H);
+
+  while (pieces.length < 140) pieces.push(spawn(false));
+
+  for (let i = pieces.length - 1; i >= 0; i--) {
+    const p = pieces[i];
+    p.wobble += p.wobbleSpeed;
+    p.x      += p.vx + Math.sin(p.wobble) * 0.4;
+    p.y      += p.vy;
+    p.angle  += p.spin;
+
+    if (p.y > H + 30) { pieces.splice(i, 1); continue; }
+
+    ctx.save();
+    ctx.globalAlpha = p.alpha;
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+
+    if (p.glow) {
+      ctx.shadowBlur  = 10;
+      ctx.shadowColor = p.glowColor;
+    }
+
+    ctx.fillStyle = p.color;
+
+    if (p.type === 'rect') {
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    } else if (p.type === 'circle') {
+      ctx.beginPath();
+      ctx.arc(0, 0, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      drawStar(ctx, p.r + 2, 4);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  requestAnimationFrame(tick);
+}
+tick();
+
+document.body.addEventListener('click', () => {
+  window.location.href = 'anzeigetafel_new.html';
+});
+</script>
+</body>
+</html>
